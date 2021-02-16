@@ -72,10 +72,10 @@ class _LoginState extends State<Login> {
                     borderRadius: BorderRadius.circular(10.0),
                   ),
                   onPressed: () {
-                    // provider.debug();
+                    provider.debug();
                     // var value=provider.passText();
                     // print(value);
-                    // provider.loginByFirebase();
+                    provider.loginByFirebase();
                   },
                   child: Text(
                     "Login",
