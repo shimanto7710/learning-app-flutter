@@ -31,6 +31,8 @@ dependencies:
   flutter_bloc: ^6.1.2
   firebase_auth: "^0.20.0+1"
   firebase_core : ^0.7.0
+  shared_preferences: ^0.5.12
+  firebase_database: ^6.0.0
 
 dev_dependencies:
   flutter_test:
