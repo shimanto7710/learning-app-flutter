@@ -9,9 +9,6 @@ import 'package:learning_app_flutter/network/apis.dart';
 class Repo {
   final api = Apis();
 
-  Apis apis = Apis();
-
-
 
   Future<Either<Glitch, Category>> getRandomCatPhoto() async {
     final apiResult = await api.getCategories();

@@ -1,18 +1,21 @@
+import 'package:dartz/dartz.dart';
 import 'package:dartz/dartz_unsafe.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:learning_app_flutter/model/user_model.dart';
+import 'package:learning_app_flutter/model/category_model.dart';
+import 'package:learning_app_flutter/model/login_model.dart';
+import 'dart:convert';
 
-class AuthServices {
+class FirebaseService {
   final FirebaseAuth _firebaseAuth;
 
   // DatabaseReference _databaseReference;
 
-  AuthServices(this._firebaseAuth);
+  FirebaseService(this._firebaseAuth);
 
   /// Changed to idTokenChanges as it updates depending on more cases.
-  Stream<User> get authStateChanges => _firebaseAuth.idTokenChanges();
+  // Stream<User> get authStateChanges => _firebaseAuth.idTokenChanges();
 
   // Future signInAnon() async {
   //   // Firebase.initializeApp();
@@ -34,7 +37,8 @@ class AuthServices {
   /// This is to make it as easy as possible but a better way would be to
   /// use your own custom class that would take the exception and return better
   /// error messages. That way you can throw, return or whatever you prefer with that instead.
-  Future<UserCredential> signIn({String email, String password}) async {
+  Future<Either<dynamic, UserCredential>> signIn(
+      {String email, String password}) async {
     try {
       // addUser();
       // getUserData();
@@ -42,13 +46,38 @@ class AuthServices {
 
       UserCredential userCredential = await _firebaseAuth
           .signInWithEmailAndPassword(email: email, password: password);
-      print("user info " + userCredential.user.email);
-      return userCredential;
+
+      return Right(userCredential);
+    } on FirebaseAuthException catch (e) {
+      // print(e.code);
+      return Left(e.code);
+    }
+  }
+
+  Future<Either<Exception, bool>> authenticate({uid: String}) async {
+    try {
+      var dbRef = FirebaseDatabase.instance.reference().child("user");
+
+      DataSnapshot result;
+      await dbRef.equalTo(uid).once().then((DataSnapshot snapshot) {
+        result = snapshot;
+      });
+
+      // Map<dynamic, dynamic> values = result.value;
+      // values.forEach((key, values) {
+      //
+      // });
+
+      if(result!=null){
+         return Right(true);
+      }else{
+        return Right(false);
+      }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
-        print('No user found for that email.');
+        return Left(e);
       } else if (e.code == 'wrong-password') {
-        print('Wrong password provided for that user.');
+        return Left(e);
       }
 
       return null;
@@ -59,21 +88,18 @@ class AuthServices {
   /// This is to make it as easy as possible but a better way would be to
   /// use your own custom class that would take the exception and return better
   /// error messages. That way you can throw, return or whatever you prefer with that instead.
-  Future<bool> signUp({String email, String password}) async {
-    try {
+  Future<Either<dynamic,UserCredential>> registration({String email, String password}) async {
 
+    try {
       UserCredential userCredential = await _firebaseAuth
           .createUserWithEmailAndPassword(email: email, password: password);
 
-      // print(userCredential);
+      final count = await getUserCount();
+      addUserById(UserModel(count, userCredential.user.email));
 
-      final count= await getUserCount() ;
-      print(count);
-      addUserById(UserModel(count,userCredential.user.email));
-
-      return true;
+      return Right(userCredential);
     } on FirebaseAuthException catch (e) {
-      return false;
+      return Left(e);
     }
   }
 
@@ -142,22 +168,23 @@ class AuthServices {
     var dbRef = FirebaseDatabase.instance.reference().child("user");
     DataSnapshot snapshot111;
     await dbRef.once().then((DataSnapshot snapshot) {
-      snapshot111=snapshot;
+      snapshot111 = snapshot;
     });
 
-    if (snapshot111.value!=null) {
-      print(snapshot111.value);
-
-      var count=0;
-      snapshot111.value.forEach((key,values) {
-        // print(values["Password"]);
+    if (snapshot111.value != null) {
+      List<dynamic> resultList = snapshot111.value;
+      // dynamic Obj =  snapshot111.value.toString();
+      // print(resultList);
+      var count = 0;
+      for (var i = 0; i < resultList.length; i++) {
+        Map<dynamic, dynamic> map = Map.from(resultList[i]);
+        // list.add(BaseModel(model: modelType, key: i.toString(), snapshot: map));
         count++;
-      });
+      }
       return count;
-    }else{
+    } else {
       return 0;
     }
-
 
     // await dbRef.once().then((DataSnapshot snapshot) {
     //   if (snapshot.value.isNotEmpty) {
@@ -176,12 +203,11 @@ class AuthServices {
     // });
   }
 
-  addUserById(UserModel user){
+  addUserById(UserModel user) {
     var dbRef = FirebaseDatabase.instance.reference().child("user");
-    dbRef.child(user.uid.toString()).set({
-      'uid': user.uid.toString(),
-      'email': user.email.toString()
-    });
+    dbRef
+        .child(user.uid.toString())
+        .set({'uid': user.uid.toString(), 'email': user.email.toString()});
   }
 
 // void updateUser(User user) async {

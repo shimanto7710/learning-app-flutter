@@ -22,4 +22,14 @@ class Glitch {
 
 class NoInternetGlitch extends Glitch {
   NoInternetGlitch() : super(message: "Unable to connect to internet");
+
+}
+class UserNotFoundGlitch extends Glitch{
+
+  UserNotFoundGlitch() : super(message: "User Not Found");
+}
+
+class WrongPassWordGlitch extends Glitch {
+  WrongPassWordGlitch() : super(message: "Wrong Password");
+
 }
